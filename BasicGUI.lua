@@ -18,7 +18,7 @@ local function createButton(name, position, action)
     local button = Instance.new("TextButton")
     button.Parent = screenGui
     button.Size = UDim2.new(0.2, 0, 0.1, 0) -- 1:10 ratio (Width:Height)
-    button.Position = UDim2.new(position.X, 0, position.Y, 0)
+    button.Position = position
     button.Text = name
     button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -37,6 +37,7 @@ local function createButton(name, position, action)
         button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     end)
     button.MouseButton1Click:Connect(function() action(button) end)
+
     return button
 end
 
@@ -137,3 +138,7 @@ end)
 createSlider(UDim2.new(0.05, 0, 0.55, 0), tostring(flySpeed), function(newSpeed)
     flySpeed = newSpeed
 end)
+
+-- Ensure script ends properly
+print("Script loaded successfully!")
+

@@ -1,1 +1,1 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Walkersea/TP_script/main/SCRIPT.lua")()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Walkersea/BasicGUI/main/BasicGUI.lua")()

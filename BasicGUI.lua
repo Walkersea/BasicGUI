@@ -1,7 +1,7 @@
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:FindFirstChildOfClass("Humanoid")
-local rootPart = character:FindFirstChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
 
 local userInput = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
@@ -27,8 +27,13 @@ local function createButton(name, position, action)
 
     -- Rounded Corners
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 15) -- Adjust for more/less roundness
+    corner.CornerRadius = UDim.new(0, 15)
     corner.Parent = button
+
+    -- Aspect Ratio Constraint (Keeps 1:10 Ratio)
+    local aspect = Instance.new("UIAspectRatioConstraint")
+    aspect.AspectRatio = 2
+    aspect.Parent = button
 
     button.MouseEnter:Connect(function()
         button.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
@@ -103,25 +108,27 @@ createButton("Fly", UDim2.new(0.05, 0, 0.35, 0), function(button)
     flying = not flying
 
     if flying then
-        bodyVelocity = Instance.new("BodyVelocity", rootPart)
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        if rootPart then
+            bodyVelocity = Instance.new("BodyVelocity", rootPart)
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
 
-        bodyGyro = Instance.new("BodyGyro", rootPart)
-        bodyGyro.CFrame = rootPart.CFrame
-        bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bodyGyro = Instance.new("BodyGyro", rootPart)
+            bodyGyro.CFrame = rootPart.CFrame
+            bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
 
-        flightLoop = runService.RenderStepped:Connect(function()
-            local moveDirection = humanoid.MoveDirection
-            bodyVelocity.Velocity = moveDirection * flySpeed
-            bodyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + moveDirection)
-        end)
+            flightLoop = runService.RenderStepped:Connect(function()
+                local moveDirection = humanoid.MoveDirection
+                bodyVelocity.Velocity = moveDirection * flySpeed
+                bodyGyro.CFrame = CFrame.new(rootPart.Position, rootPart.Position + moveDirection)
+            end)
+        end
         button.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         button.Text = "Fly (On)"
     else
         if flightLoop then flightLoop:Disconnect() end
-        if bodyVelocity then bodyVelocity:Destroy() end
-        if bodyGyro then bodyGyro:Destroy() end
+        if bodyVelocity and bodyVelocity.Parent then bodyVelocity:Destroy() end
+        if bodyGyro and bodyGyro.Parent then bodyGyro:Destroy() end
         button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
         button.Text = "Fly (Off)"
     end
@@ -139,6 +146,11 @@ createSlider(UDim2.new(0.05, 0, 0.55, 0), tostring(flySpeed), function(newSpeed)
     flySpeed = newSpeed
 end)
 
--- Ensure script ends properly
-print("Script loaded successfully!")
+-- Ensure UI persists on character respawn
+player.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+    humanoid = character:WaitForChild("Humanoid")
+    rootPart = character:WaitForChild("HumanoidRootPart")
+end)
 
+print("✅ Script loaded successfully!")

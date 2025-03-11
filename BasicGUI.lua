@@ -5,9 +5,20 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 
--- Create Main GUI
+-- Wait for the game and player to load
+repeat wait() until game:IsLoaded()
+local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+-- Remove existing GUI to prevent duplicates
+if game.CoreGui:FindFirstChild("MultiToolGUI") then
+    game.CoreGui.MultiToolGUI:Destroy()
+end
+
+-- Create Main GUI and parent to CoreGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Name = "MultiToolGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.CoreGui
 
 -- Main Frame (Compact Design)
 local mainFrame = Instance.new("Frame")
@@ -15,9 +26,9 @@ mainFrame.Size = UDim2.new(0, 150, 0, 240)
 mainFrame.Position = UDim2.new(0, 10, 0.5, -120)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
 mainFrame.Active = true
 mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
 -- Title Label
 local titleLabel = Instance.new("TextLabel")
@@ -44,16 +55,16 @@ end
 -- BTools Button
 createButton("BTools", UDim2.new(0, 5, 0, 35), function()
     for i = 1, 4 do
-        local Tool = Instance.new("HopperBin")
-        Tool.BinType = i
-        Tool.Name = tostring(math.random(1000, 9999))
-        Tool.Parent = Players.LocalPlayer.Backpack
+        local tool = Instance.new("HopperBin")
+        tool.BinType = i
+        tool.Name = tostring(math.random(1000, 9999))
+        tool.Parent = player.Backpack
     end
 end)
 
 -- Join Player Button
 createButton("Join Player", UDim2.new(0, 5, 0, 65), function()
-    local userName = "PlayerNameHere" -- Replace with dynamic input if desired
+    local userName = "PlayerNameHere" -- Replace with actual username
     local placeId = game.PlaceId
     local userId
     local success, err = pcall(function()
@@ -65,7 +76,7 @@ createButton("Join Player", UDim2.new(0, 5, 0, 65), function()
         for _, server in pairs(response.data) do
             for _, id in pairs(server.playerIds) do
                 if id == userId then
-                    TeleportService:TeleportToPlaceInstance(placeId, server.id, Players.LocalPlayer)
+                    TeleportService:TeleportToPlaceInstance(placeId, server.id, player)
                     return
                 end
             end
@@ -77,7 +88,7 @@ end)
 createButton("Custom Tool", UDim2.new(0, 5, 0, 95), function()
     local tool = Instance.new("Tool")
     tool.Name = "CustomTool"
-    tool.Parent = Players.LocalPlayer.Backpack
+    tool.Parent = player.Backpack
 
     local handle = Instance.new("Part")
     handle.Size = Vector3.new(1, 1, 1)
@@ -117,21 +128,18 @@ end)
 
 -- Fly Button
 createButton("Enable Fly", UDim2.new(0, 5, 0, 155), function()
-    local character = Players.LocalPlayer.Character
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
     local flying = true
     local speed = 50
 
-    local bodyGyro = Instance.new("BodyGyro")
+    local bodyGyro = Instance.new("BodyGyro", humanoidRootPart)
     bodyGyro.P = 9e4
-    bodyGyro.Parent = humanoidRootPart
     bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
     bodyGyro.CFrame = humanoidRootPart.CFrame
 
-    local bodyVelocity = Instance.new("BodyVelocity")
+    local bodyVelocity = Instance.new("BodyVelocity", humanoidRootPart)
     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    bodyVelocity.Parent = humanoidRootPart
 
     RunService.Heartbeat:Connect(function()
         if flying then
@@ -145,7 +153,7 @@ end)
 
 -- Noclip Camera Button
 createButton("Noclip Cam", UDim2.new(0, 5, 0, 185), function()
-    local pop = Players.LocalPlayer.PlayerScripts.PlayerModule.CameraModule.ZoomController.Popper
+    local pop = player.PlayerScripts.PlayerModule.CameraModule.ZoomController.Popper
     for _, func in pairs(getgc()) do
         if type(func) == "function" and getfenv(func).script == pop then
             for i, const in pairs(debug.getconstants(func)) do

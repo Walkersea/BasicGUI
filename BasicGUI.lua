@@ -1,168 +1,160 @@
 -- Services
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local backpack = player:WaitForChild("Backpack")
-local playerGui = player:WaitForChild("PlayerGui")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 
--- Main GUI Creation
-local mainGui = Instance.new("ScreenGui")
-mainGui.Name = "MainControlGui"
-mainGui.Parent = playerGui
+-- Create Main GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
--- Function to Create Buttons
-local function createButton(name, position, text)
-	local button = Instance.new("TextButton")
-	button.Name = name
-	button.Size = UDim2.new(0, 120, 0, 50)
-	button.Position = position
-	button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-	button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	button.Text = text
-	button.Font = Enum.Font.SourceSansBold
-	button.TextSize = 18
-	button.BorderSizePixel = 0
-	button.Parent = mainGui
-	return button
+-- Main Frame (Compact Design)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 150, 0, 240)
+mainFrame.Position = UDim2.new(0, 10, 0.5, -120)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+-- Title Label
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleLabel.Text = "Multi-Tool GUI"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 14
+titleLabel.Parent = mainFrame
+
+-- Function to create compact buttons
+local function createButton(name, position, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -10, 0, 25)
+    button.Position = position
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 12
+    button.Text = name
+    button.Parent = mainFrame
+    button.MouseButton1Click:Connect(callback)
 end
 
--- === Noclip Cam Button ===
-local noclipButton = createButton("NoclipCamButton", UDim2.new(0.05, 0, 0.85, 0), "Noclip Cam")
-noclipButton.MouseButton1Click:Connect(function()
-	local sc = debug and debug.setconstant
-	local gc = debug and debug.getconstants
-	if sc and gc then
-		local pop = player.PlayerScripts.PlayerModule.CameraModule.ZoomController.Popper
-		for _, v in pairs(getgc()) do
-			if type(v) == 'function' and getfenv(v).script == pop then
-				for i, v1 in pairs(gc(v)) do
-					if tonumber(v1) == 0.25 then
-						sc(v, i, 0)
-					elseif tonumber(v1) == 0 then
-						sc(v, i, 0.25)
-					end
-				end
-			end
-		end
-	end
+-- BTools Button
+createButton("BTools", UDim2.new(0, 5, 0, 35), function()
+    for i = 1, 4 do
+        local Tool = Instance.new("HopperBin")
+        Tool.BinType = i
+        Tool.Name = tostring(math.random(1000, 9999))
+        Tool.Parent = Players.LocalPlayer.Backpack
+    end
 end)
 
--- === Fly Button ===
-local flyButton = createButton("FlyButton", UDim2.new(0.2, 0, 0.85, 0), "Fly")
-flyButton.MouseButton1Click:Connect(function()
-	local FLYING = true
-	local SPEED = 50
-	local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if not rootPart then return end
-
-	local BG = Instance.new('BodyGyro', rootPart)
-	local BV = Instance.new('BodyVelocity', rootPart)
-	BG.P = 9e4
-	BG.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-	BV.maxForce = Vector3.new(9e9, 9e9, 9e9)
-
-	local humanoid = player.Character:FindFirstChildOfClass('Humanoid')
-	if humanoid then humanoid.PlatformStand = true end
-
-	task.spawn(function()
-		while FLYING do
-			wait()
-			BV.velocity = workspace.CurrentCamera.CFrame.LookVector * SPEED
-			BG.CFrame = workspace.CurrentCamera.CFrame
-		end
-		BG:Destroy()
-		BV:Destroy()
-		if humanoid then humanoid.PlatformStand = false end
-	end)
+-- Join Player Button
+createButton("Join Player", UDim2.new(0, 5, 0, 65), function()
+    local userName = "PlayerNameHere" -- Replace with dynamic input if desired
+    local placeId = game.PlaceId
+    local userId
+    local success, err = pcall(function()
+        userId = Players:GetUserIdFromNameAsync(userName)
+    end)
+    if success and userId then
+        local URL = ("https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100")
+        local response = HttpService:JSONDecode(game:HttpGet(URL))
+        for _, server in pairs(response.data) do
+            for _, id in pairs(server.playerIds) do
+                if id == userId then
+                    TeleportService:TeleportToPlaceInstance(placeId, server.id, Players.LocalPlayer)
+                    return
+                end
+            end
+        end
+    end
 end)
 
--- === BTools Button ===
-local btoolsButton = createButton("BToolsButton", UDim2.new(0.35, 0, 0.85, 0), "BTools")
-btoolsButton.MouseButton1Click:Connect(function()
-	for i = 1, 4 do
-		local tool = Instance.new("HopperBin")
-		tool.BinType = i
-		tool.Name = "BTool_" .. i
-		tool.Parent = backpack
-	end
+-- Custom Tool Button
+createButton("Custom Tool", UDim2.new(0, 5, 0, 95), function()
+    local tool = Instance.new("Tool")
+    tool.Name = "CustomTool"
+    tool.Parent = Players.LocalPlayer.Backpack
+
+    local handle = Instance.new("Part")
+    handle.Size = Vector3.new(1, 1, 1)
+    handle.Name = "Handle"
+    handle.Parent = tool
+
+    local decal = Instance.new("Decal")
+    decal.Texture = "rbxassetid://16019795773"
+    decal.Face = Enum.NormalId.Front
+    decal.Parent = handle
 end)
 
--- === Join Player Button ===
-local joinButton = createButton("JoinPlayerButton", UDim2.new(0.5, 0, 0.85, 0), "Join Player")
-joinButton.MouseButton1Click:Connect(function()
-	local user = "USERNAME" -- Replace with the desired username
-	local place = game.PlaceId
-	if not user or user == "" then return end
-
-	local success, userId = pcall(function()
-		return Players:GetUserIdFromNameAsync(user)
-	end)
-	if success then
-		local url = "https://games.roblox.com/v1/games/"..place.."/servers/Public?sortOrder=Asc&limit=100"
-		local data = HttpService:JSONDecode(game:HttpGet(url))
-		for _, server in pairs(data.data) do
-			if table.find(server.playerIds, userId) then
-				TeleportService:TeleportToPlaceInstance(place, server.id, player)
-				return
-			end
-		end
-	end
+-- Boost Graphics Button
+createButton("Boost Graphics", UDim2.new(0, 5, 0, 125), function()
+    local Terrain = workspace:FindFirstChildOfClass('Terrain')
+    Terrain.WaterWaveSize = 0
+    Terrain.WaterWaveSpeed = 0
+    Terrain.WaterReflectance = 0
+    Terrain.WaterTransparency = 0
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = 9e9
+    settings().Rendering.QualityLevel = 1
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") then
+            v.Material = "Plastic"
+            v.Reflectance = 0
+        elseif v:IsA("Decal") then
+            v.Transparency = 1
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Lifetime = NumberRange.new(0)
+        elseif v:IsA("Explosion") then
+            v.BlastPressure = 1
+            v.BlastRadius = 1
+        end
+    end
 end)
 
--- === Custom Tool Button ===
-local customToolButton = createButton("CustomToolButton", UDim2.new(0.65, 0, 0.85, 0), "Add Tool")
-customToolButton.MouseButton1Click:Connect(function()
-	local tool = Instance.new("Tool")
-	tool.Name = "CustomTool"
-	tool.Parent = backpack
+-- Fly Button
+createButton("Enable Fly", UDim2.new(0, 5, 0, 155), function()
+    local character = Players.LocalPlayer.Character
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local flying = true
+    local speed = 50
 
-	local handle = Instance.new("Part")
-	handle.Name = "Handle"
-	handle.Size = Vector3.new(1, 1, 1)
-	handle.Parent = tool
-	tool.RequiresHandle = true
+    local bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.P = 9e4
+    bodyGyro.Parent = humanoidRootPart
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.CFrame = humanoidRootPart.CFrame
 
-	local texture = Instance.new("Decal")
-	texture.Texture = "rbxassetid://16019795773"
-	texture.Face = Enum.NormalId.Top
-	texture.Parent = handle
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVelocity.Parent = humanoidRootPart
+
+    RunService.Heartbeat:Connect(function()
+        if flying then
+            bodyVelocity.Velocity = humanoidRootPart.CFrame.lookVector * speed
+        else
+            bodyGyro:Destroy()
+            bodyVelocity:Destroy()
+        end
+    end)
 end)
 
--- === Boost Graphics Button ===
-local boostButton = createButton("BoostGraphicsButton", UDim2.new(0.8, 0, 0.85, 0), "Boost Graphics")
-boostButton.MouseButton1Click:Connect(function()
-	local Terrain = workspace:FindFirstChildOfClass('Terrain')
-	Terrain.WaterWaveSize = 0
-	Terrain.WaterWaveSpeed = 0
-	Terrain.WaterReflectance = 0
-	Terrain.WaterTransparency = 0
-	Lighting.GlobalShadows = false
-	Lighting.FogEnd = 9e9
-	settings().Rendering.QualityLevel = 1
-
-	for _, v in pairs(game:GetDescendants()) do
-		if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") then
-			v.Material = "Plastic"
-			v.Reflectance = 0
-		elseif v:IsA("Decal") then
-			v.Transparency = 1
-		elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-			v.Lifetime = NumberRange.new(0)
-		elseif v:IsA("Explosion") then
-			v.BlastPressure = 1
-			v.BlastRadius = 1
-		end
-	end
-
-	workspace.DescendantAdded:Connect(function(child)
-		task.spawn(function()
-			if child:IsA('ForceField') or child:IsA('Smoke') or child:IsA('Fire') or child:IsA('Sparkles') then
-				RunService.Heartbeat:Wait()
-				child:Destroy()
-			end
-		end)
-	end)
+-- Noclip Camera Button
+createButton("Noclip Cam", UDim2.new(0, 5, 0, 185), function()
+    local pop = Players.LocalPlayer.PlayerScripts.PlayerModule.CameraModule.ZoomController.Popper
+    for _, func in pairs(getgc()) do
+        if type(func) == "function" and getfenv(func).script == pop then
+            for i, const in pairs(debug.getconstants(func)) do
+                if const == .25 then
+                    debug.setconstant(func, i, 0)
+                elseif const == 0 then
+                    debug.setconstant(func, i, .25)
+                end
+            end
+        end
+    end
 end)

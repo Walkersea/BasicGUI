@@ -8,7 +8,7 @@ local CoreGui = game:GetService("CoreGui")
 
 -- Create Main GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MultiToolGui"
+screenGui.Name = "Byte_EXPLOITS"
 screenGui.Parent = CoreGui
 
 -- Main Frame

@@ -59,6 +59,22 @@ local function createButton(name, position, callback)
     button.MouseButton1Click:Connect(callback)
 end
 
+-- Custom Sword Tool Button
+createButton("Sword Tool", UDim2.new(0, 5, 0, 160), function()
+    local tool = Instance.new("Tool")
+    tool.Name = "SwordTool"
+    tool.Parent = Players.LocalPlayer.Backpack
+
+    local handle = Instance.new("Part")
+    handle.Size = Vector3.new(1, 4, 1)
+    handle.Name = "Handle"
+    handle.Parent = tool
+
+    local mesh = Instance.new("SpecialMesh", handle)
+    mesh.MeshType = Enum.MeshType.FileMesh
+    mesh.TextureId = "rbxassetid://117186212806363"
+end)
+
 -- BTools Button
 createButton("BTools", UDim2.new(0, 5, 0, 130), function()
     for i = 1, 4 do

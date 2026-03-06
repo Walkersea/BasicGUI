@@ -1,5 +1,5 @@
 # ⚡ Byte_EXPLOITS v2
-
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Walkersea/BasicGUI/refs/heads/main/BasicGUI.lua"))()<br>
 A feature-rich, multi-tab Roblox exploit GUI with a modern dark UI, smooth animations, and a wide range of player, world, tool, and network utilities.
 
 ---
